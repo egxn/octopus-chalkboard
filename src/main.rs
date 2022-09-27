@@ -1,5 +1,5 @@
 use eframe::{egui, emath::{self, RectTransform}, NativeOptions, CreationContext};
-use egui::{Frame, Pos2, Stroke, Color32, Response, Sense, Rect, Shape, CentralPanel};
+use egui::{Frame, Pos2, Stroke, Color32, Response, Sense, Rect, Shape, CentralPanel, Key};
 
 fn main() {
   let options: NativeOptions = eframe::NativeOptions {
@@ -19,15 +19,48 @@ fn main() {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
 struct Octopus {
+  color: Color32,
+  keyboard: Keyboard,
   lines: Vec<Vec<Pos2>>,
   stroke: Stroke,
+  stroke_width: f32,
 }
 
 impl Default for Octopus {
   fn default() -> Self {
     Self {
+      color: Color32::from_rgb(0, 0, 0),
       lines: Default::default(),
-      stroke: Stroke::new(1.0, Color32::from_rgb(25, 200, 100)),
+      keyboard: Keyboard::new(),
+      stroke: Stroke::new(1.0, Color32::from_rgb(0, 0, 0)),
+      stroke_width: 1.0,
+    }
+  }
+}
+
+struct Keyboard {
+  colors: Vec<egui::Key>,
+  stroke_width: Vec<egui::Key>,
+}
+
+impl Keyboard {
+  fn new() -> Self {
+    Self {
+      colors: vec![
+        Key::Num1,
+        Key::Num2,
+        Key::Num3,
+        Key::Num4,
+        Key::Num5,
+        Key::Num6,
+        Key::Num7,
+        Key::Num8,
+        Key::Num9,
+      ],
+      stroke_width: vec![
+        Key::Q,
+        Key::W,
+      ],
     }
   }
 }
@@ -79,7 +112,24 @@ impl eframe::App for Octopus {
   }
 
   fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-    custom_window_frame(ctx, frame, "Octuopus 🐙", |ui| {
+    custom_window_frame(ctx, frame, "Octopus 🐙", |ui| {
+      let events = ui.input().events.clone();
+      for event in &events {
+        match event {
+          egui::Event::Key{key, pressed, modifiers} => {
+            if self.keyboard.colors.contains(key) && *pressed {
+              self.color = change_color(key);
+              self.stroke = Stroke::new(self.stroke_width, self.color);
+            } else if self.keyboard.stroke_width.contains(key) && *pressed {
+              self.stroke_width = change_stroke_width(key, &self.stroke_width);
+              self.stroke = Stroke::new(self.stroke_width, self.color);
+            } else if key.eq(&Key::Q) && modifiers.ctrl {
+              println!("CTRL + Q");
+            }
+          },
+          _ => {}
+        }
+      }
       Frame::canvas(ui.style())
       .fill(egui::Color32::TRANSPARENT)
       .show(ui, |ui| {
@@ -118,4 +168,28 @@ fn custom_window_frame(
         let mut content_ui = ui.child_ui(content_rect, *ui.layout());
         add_contents(&mut content_ui);
       });
+}
+
+fn change_color(key: &Key) -> Color32 {
+  match key {
+    Key::Num0 => Color32::from_rgb(234, 118, 203),
+    Key::Num1 => Color32::from_rgb(136, 57, 239),
+    Key::Num2 => Color32::from_rgb(210, 15, 57),
+    Key::Num3 => Color32::from_rgb(254, 100, 11),
+    Key::Num4 => Color32::from_rgb(64, 160, 43),
+    Key::Num5 => Color32::from_rgb(32, 159, 181),
+    Key::Num6 => Color32::from_rgb(30, 102, 245),
+    Key::Num7 => Color32::from_rgb(114, 135, 253),
+    Key::Num8 => Color32::from_rgb(76, 79, 105),
+    Key::Num9 => Color32::from_rgb(239, 241, 245),
+      _ => Color32::from_rgb(202, 158, 230),
+  }
+}
+
+fn change_stroke_width(key: &Key, width: &f32) -> f32 {
+  match key {
+    Key::Q => width + 1.0,
+    Key::W => width - 1.0,
+    _ => width.clone(),
+  }
 }
