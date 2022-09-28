@@ -21,7 +21,7 @@ fn main() {
 struct Octopus {
   color: Color32,
   keyboard: Keyboard,
-  lines: Vec<Vec<Pos2>>,
+  lines: Vec<(Vec<Pos2>, Stroke)>,
   stroke: Stroke,
   stroke_width: f32,
 }
@@ -77,27 +77,27 @@ impl Octopus {
     let from_screen: RectTransform = to_screen.inverse();
   
     if self.lines.is_empty() {
-      self.lines.push(vec![]);
+      self.lines.push((vec![], self.stroke));
     }
   
     let current_line = self.lines.last_mut().unwrap();
   
     if let Some(pointer_pos) = response.interact_pointer_pos() {
       let canvas_pos = from_screen * pointer_pos;
-      if current_line.last() != Some(&canvas_pos) {
-          current_line.push(canvas_pos);
+      if current_line.0.last() != Some(&canvas_pos) {
+          current_line.0.push(canvas_pos);
           response.mark_changed();
       }
-    } else if !current_line.is_empty() {
-      self.lines.push(vec![]);
+    } else if !current_line.0.is_empty() {
+      self.lines.push((vec![], self.stroke));
       response.mark_changed();
     }
   
     let mut shapes: Vec<Shape> = vec![];
     for line in &self.lines {
-      if line.len() >= 2 {
-          let points: Vec<Pos2> = line.iter().map(|p| to_screen * *p).collect();
-          shapes.push(egui::Shape::line(points, self.stroke));
+      if line.0.len() >= 2 {
+          let points: Vec<Pos2> = line.0.iter().map(|p| to_screen * *p).collect();
+          shapes.push(egui::Shape::line(points, line.1));
       }
     }
     painter.extend(shapes);
@@ -123,8 +123,8 @@ impl eframe::App for Octopus {
             } else if self.keyboard.stroke_width.contains(key) && *pressed {
               self.stroke_width = change_stroke_width(key, &self.stroke_width);
               self.stroke = Stroke::new(self.stroke_width, self.color);
-            } else if key.eq(&Key::Q) && modifiers.ctrl {
-              println!("CTRL + Q");
+            } else if key.eq(&Key::N) && modifiers.ctrl {
+              self.lines = vec![];
             }
           },
           _ => {}
