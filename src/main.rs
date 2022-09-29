@@ -29,10 +29,10 @@ struct Octopus {
 impl Default for Octopus {
   fn default() -> Self {
     Self {
-      color: Color32::from_rgb(0, 0, 0),
+      color: Color32::from_rgb(234, 118, 203),
       lines: Default::default(),
       keyboard: Keyboard::new(),
-      stroke: Stroke::new(1.0, Color32::from_rgb(0, 0, 0)),
+      stroke: Stroke::new(1.0, Color32::from_rgb(234, 118, 203)),
       stroke_width: 1.0,
     }
   }
@@ -125,6 +125,15 @@ impl eframe::App for Octopus {
               self.stroke = Stroke::new(self.stroke_width, self.color);
             } else if key.eq(&Key::N) && modifiers.ctrl {
               self.lines = vec![];
+            } else if key.eq(&Key::Z) && *pressed && modifiers.ctrl {
+              if self.lines.len() > 0 {
+                self.lines.pop();
+              }
+            } else if key.eq(&Key::Escape) ||
+                      key.eq(&Key::Q) && modifiers.ctrl ||
+                      key.eq(&Key::W) && modifiers.ctrl ||
+                      key.eq(&Key::F4) && modifiers.alt {
+              std::process::exit(0);
             }
           },
           _ => {}
@@ -189,7 +198,7 @@ fn change_color(key: &Key) -> Color32 {
 fn change_stroke_width(key: &Key, width: &f32) -> f32 {
   match key {
     Key::Q => width + 1.0,
-    Key::W => width - 1.0,
+    Key::W => if width > &0.0 { width - 1.0 } else { width.clone() },
     _ => width.clone(),
   }
 }
